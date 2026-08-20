@@ -1,19 +1,20 @@
 # voice_input.py
 
 import sounddevice as sd
-import queue
+from queue import Queue
 import sys
 import json
-
+from threading import Thread, Lock, Event
 from vosk import Model, KaldiRecognizer
 
-from commands import handle_command
 
 
-def Jarvis():
+
+
+def voice_input(content : Queue, trad_lock : Lock, cancel : Event):
+    print("VOICE_INPUT")
     sys.stdout.reconfigure(line_buffering=True)
-
-    q = queue.Queue()
+    q = Queue()
 
 
     def callback(indata, frames, time, status):
@@ -45,11 +46,19 @@ def Jarvis():
         print("Parle maintenant...", flush=True)
 
         while True:
+            if cancel.is_set():
+                break
             data = q.get()
             if rec.AcceptWaveform(data):
                 result = json.loads(rec.Result())
                 text = result.get("text", "").strip()
                 print("Tu as dit :", text)
-                if text:  # On appelle la commande seulement si du texte est détecté
-                    handle_command(text)
+                if text != "":  # On appelle la commande seulement si du texte est détecté
+                    content.put(text)
+                    trad_lock.release()
+                    # handle_command(text)
+                # print("out of if else lock")
             q.queue.clear()
+
+# if __name__ == "__main__":
+#     Jarvis()

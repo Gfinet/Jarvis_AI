@@ -56,7 +56,7 @@ from dotenv import load_dotenv
 import numpy as np
 import sounddevice as sd
 
-from voice_input import Jarvis 
+from main import Jarvis 
 
 # --- tuning knobs -----------------------------------------------------------
 SAMPLE_RATE = 44100

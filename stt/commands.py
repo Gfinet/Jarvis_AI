@@ -4,14 +4,27 @@ import webbrowser
 import os
 import sys
 import subprocess as sb
+from threading import Thread, Lock, Event
+from queue import Queue
 
 from Jarvis_voice import Jarvis_voice
 from LLM.llm import Gemma3
 
-def handle_command(command):
-    val = Gemma3(command)
-    Jarvis_voice(val.message.content)
-    print("val", val)
+def handle_command(command : Queue, voice_lock: Lock, cancel : Event):
+    print("AI_COMMAND")
+    while True:    
+        if not voice_lock.locked():
+            print("AI_COMMAND_GO")
+            message = command.get()
+            val = Gemma3(message)
+            print("Gem rep : ", val.message.content)
+            Jarvis_voice(val.message.content)
+            if "au revoir" in message:
+                cancel.set()
+            command.queue.clear()
+            voice_lock.acquire()  
+        if cancel.is_set():
+             break
     # command = command.lower()
 
     # if "bonjour" in command:
@@ -25,9 +38,10 @@ def handle_command(command):
     #     Jarvis_voice(" Je lance le script.")
     #     sb.call("python3 ton_script.py")
 
-    if "au revoir" in command:
+    
         # Jarvis_voice("À bientôt ! 👋")
-        sys.exit(0)
 
     # else:
     #     Jarvis_voice(" Je n'ai pas compris cette commande.")
+
+
