@@ -7,22 +7,23 @@ import subprocess as sb
 from threading import Thread, Lock, Event
 from queue import Queue
 
-from Jarvis_voice import Jarvis_voice
 from LLM.llm import Gemma3
 
-def handle_command(command : Queue, voice_lock: Lock, cancel : Event):
+def handle_command(command : Queue, AI_lock: Lock, voice_lock: Lock, cancel : Event):
     print("AI_COMMAND")
     while True:    
-        if not voice_lock.locked():
+        if not AI_lock.locked():
             print("AI_COMMAND_GO")
             message = command.get()
-            val = Gemma3(message)
-            print("Gem rep : ", val.message.content)
-            Jarvis_voice(val.message.content)
-            if "au revoir" in message:
-                cancel.set()
+            print("Gemma in : ", message["content"])
+            val = Gemma3(message["content"])
             command.queue.clear()
-            voice_lock.acquire()  
+            command.put(val.message)
+            voice_lock.release()
+            print("Gem rep : ", val.message["content"])
+            if ("au revoir" in message) or ("Au revoir." in message):
+                cancel.set()
+            AI_lock.acquire()
         if cancel.is_set():
              break
     # command = command.lower()
